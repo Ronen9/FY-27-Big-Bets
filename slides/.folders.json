@@ -1,4 +1,13 @@
 {
-  "folders": [],
+  "folders": [
+    {
+      "id": "f-52aad98a",
+      "name": "VIP",
+      "icon": {
+        "type": "color",
+        "value": "#c0392b"
+      }
+    }
+  ],
   "assignments": {}
 }

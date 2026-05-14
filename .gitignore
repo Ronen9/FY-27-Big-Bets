@@ -1,2 +1,35 @@
 node_modules
 dist
+
+# Deck-builder Python venv + local env (server.py)
+tools/deck-builder/.venv/
+tools/deck-builder/.env
+tools/deck-builder/__pycache__/
+
+# Top-level secrets (Cohere key, AOAI keys, Tavily key, etc.)
+.env
+.env.local
+
+# Customer / pipeline data — never publish
+docs/
+
+# Generated, customer-named decks. The deck-builder writes new decks under
+# slides/<auto-id>/ where auto-id usually ends with -<YYMMDD>-<HHMM>.
+# Keep them out of the public repo even if you commit by accident.
+slides/clalit-*
+slides/maccabi-*
+slides/nice-*
+slides/strauss-*
+slides/phoenix-*
+slides/zim-*
+slides/nuvei-*
+slides/teva-*
+slides/*-26[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]/
+
+# Hand-authored "real-customer" reference decks. Keep locally; do not ship.
+slides/d365-sales-play/
+slides/fy27-big-bet/
+
+# Generated bundle the deck-builder used to write (no longer used).
+tools/deck-builder/pipeline-data.js
+
