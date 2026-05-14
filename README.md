@@ -1,71 +1,96 @@
 # FY-27 Big Bets — Deck Builder
 
-A small local web app that turns an MSX pipeline export into a fresh React
-slide deck in about a minute. You upload your `.xlsx`, pick three accounts
-(or let the picker pick them), pick a product, and an LLM writes a
-1920×1080 TSX deck straight into `slides/<id>/index.tsx` — ready to open
-in the dev server.
+A small local web app. You drop your **MSX pipeline export** into the
+browser, pick three accounts, pick a product, hit **Build my deck →**, and
+an LLM writes a 1920×1080 React slide deck onto your disk in about a
+minute. Then a hot-reloading dev server shows it in your browser, ready to
+edit.
 
-The slide framework underneath is [open-slide](https://github.com/open-slide/open-slide):
-each deck is plain React (TSX) inside `slides/<id>/`, and the dev server hot-reloads as
-you edit.
-
-> **Your MSX export never leaves your browser.** The spreadsheet is parsed
-> client-side. Only the three account names you actually pick (plus your
-> brief and the chosen product) are sent to the LLM.
+> Your MSX file never leaves your machine. The browser parses it locally;
+> only the three account names you pick (plus the brief and product) go to
+> the LLM.
 
 ---
 
-## Prerequisites
+## 1. Install the prerequisites
 
-- **Node.js 20+** and **pnpm** (or npm) — for the slide dev server
-- **Python 3.10+** — for the deck-builder server
-- **Azure CLI** (`az`) — for Entra-based auth to Azure OpenAI
-  ([install](https://aka.ms/azcli))
-- An **Azure OpenAI** resource with a chat-completion deployment. The
-  default and tested model is `gpt-4.1`. You need the `Cognitive Services
-  OpenAI User` role on the resource.
+Install these once on your machine:
 
-Optional:
+| Tool | Where | Used for |
+| --- | --- | --- |
+| **Node.js 20+** | <https://nodejs.org/> | Slide dev server |
+| **pnpm** | `npm install -g pnpm` | Faster `npm` |
+| **Python 3.10+** | <https://www.python.org/downloads/> | Deck-builder server |
+| **Git** | <https://git-scm.com/> | Cloning the repo |
+| **Azure CLI** | <https://aka.ms/azcli> | Sign in to Azure OpenAI |
 
-- A **[Cohere](https://dashboard.cohere.com/) API key** if you want to use
-  Cohere `command-a-03-2025` instead of Azure OpenAI.
-- A **[Tavily](https://tavily.com/) API key** to enable the Magic Picker's
-  one-line "why" lookup per account.
+You also need:
+
+- An **Azure OpenAI** resource with a `gpt-4.1` deployment.
+- The **Cognitive Services OpenAI User** role on that resource (Ronen
+  grants this — give him your Microsoft email).
 
 ---
 
-## Install
+## 2. Get the code
 
 ```powershell
-git clone https://github.com/microsoft/FY-27-Big-Bets.git
+git clone https://github.com/Ronen9/FY-27-Big-Bets.git
 cd FY-27-Big-Bets
-
-# 1. Slide framework
-pnpm install            # or: npm install
-
-# 2. Credentials
-copy .env.example .env  # then open .env and fill in your values
-#                         (AZURE_OPENAI_ENDPOINT, _DEPLOYMENT,
-#                          _API_VERSION, _TENANT_ID at minimum)
-
-# 3. Deck-builder Python deps (one-time, takes ~10s)
-cd tools\deck-builder
-py -3 -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-deactivate
-cd ..\..
-
-# 4. Sign in to Azure (one-time, opens a browser)
-az login --tenant <your-tenant-id>
 ```
 
 ---
 
-## Run it
+## 3. Add your credentials
 
-You need two terminals.
+```powershell
+copy .env.example .env
+notepad .env
+```
+
+Fill in these four values (Ronen will give them to you):
+
+```
+AZURE_OPENAI_ENDPOINT=https://<your-aoai-resource>.openai.azure.com
+AZURE_OPENAI_DEPLOYMENT=gpt-4.1
+AZURE_OPENAI_API_VERSION=2024-10-21
+AZURE_OPENAI_TENANT_ID=<your-tenant-guid>
+```
+
+Save and close.
+
+---
+
+## 4. Sign in to Azure (one time)
+
+```powershell
+az login --tenant <your-tenant-id>
+```
+
+A browser opens; pick your work account.
+
+---
+
+## 5. Install dependencies
+
+```powershell
+# Slide dev server
+pnpm install
+
+# Deck-builder server (creates .venv, installs Flask etc.)
+cd tools\deck-builder
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+deactivate
+cd ..\..
+```
+
+---
+
+## 6. Run it
+
+You need **two terminals** open at the same time.
 
 **Terminal 1 — slide dev server:**
 
@@ -73,9 +98,9 @@ You need two terminals.
 pnpm dev
 ```
 
-Serves the React slides at <http://localhost:5173>.
+Leave it running. It serves the slides at <http://localhost:5173>.
 
-**Terminal 2 — deck-builder UI:**
+**Terminal 2 — deck builder UI:**
 
 ```powershell
 cd tools\deck-builder
@@ -86,62 +111,34 @@ That opens <http://localhost:8765> in your browser.
 
 ---
 
-## Build a deck
+## 7. Build a deck
 
-1. Drag your MSX pipeline export onto the **Upload MSX** card. The required
-   columns are listed in [`tools/deck-builder/README.md`](tools/deck-builder/README.md#refresh-the-pipeline-data).
-2. Pick **Mode A** (manual — three dropdowns) or **Mode B** (Magic Picker
-   recommends three accounts based on a chosen product).
-3. Type a one-line brief (optional but recommended).
-4. Click **Build my deck →**. The LLM writes a new deck to
-   `slides/<auto-id>/index.tsx` and the UI shows the dev-server URL.
-5. Open the URL. Edit the TSX live; the dev server hot-reloads.
+In the deck-builder browser tab:
 
----
+1. **Drag your MSX pipeline export (`.xlsx`) onto the upload card.**
+   Required columns: `Account Name (English)` (or `CRM Account Name`),
+   `Qualified Pipeline`, `Opportunity ID`, `Sales Stage`,
+   `Forecast Recommendation`, `Primary Sales Play`.
+2. **Pick a mode:**
+   - **Mode A — Manual:** three dropdowns, pick three accounts.
+   - **Mode B — ✨ Magic Picker:** pick a product, the tool recommends
+     the top three accounts.
+3. **Type a one-line brief** (optional but helps).
+4. **Click "Build my deck →".**
 
-## Authoring a slide by hand
+After ~60 seconds the page shows a link like
+`http://localhost:5173/<auto-id>`. Click it. Your deck is live.
 
-Every slide is plain React. Drop a new file at `slides/<your-slide>/index.tsx`:
-
-```tsx
-import type { Page, SlideMeta } from '@open-slide/core';
-
-const Cover: Page = () => (
-  <div style={{ width: '100%', height: '100%' }}>Hello</div>
-);
-
-export const meta: SlideMeta = { title: 'My slide' };
-export default [Cover] satisfies Page[];
-```
-
-Pages render into a fixed **1920 × 1080** canvas — design with absolute pixel
-values. Put images, fonts, and videos under `slides/<id>/assets/` and import
-them directly. See [`slides/getting-started/index.tsx`](slides/getting-started/index.tsx)
-for a working example, and [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md)
-for the full authoring guide if you're using Copilot or Claude Code.
+The deck source is at `slides/<auto-id>/index.tsx` — edit it and the
+browser hot-reloads.
 
 ---
 
-## Deeper docs
+## Slide controls
 
-- [`tools/deck-builder/README.md`](tools/deck-builder/README.md) — server
-  internals, magic-picker scoring, backend selection (AOAI vs Cohere),
-  required MSX columns.
-- [`AGENTS.md`](AGENTS.md) / [`CLAUDE.md`](CLAUDE.md) — slide-authoring
-  rules consumed by Copilot / Claude Code skills in this repo.
-- `tools/deck-builder/reference/example-deck.tsx` — the fictional reference
-  deck embedded in the LLM prompt as a structural / density example.
-
----
-
-## Scripts
-
-| Command | Description |
-| --- | --- |
-| `pnpm dev` | Start the slide dev server with hot reload (port 5173). |
-| `pnpm build` | Build a static bundle you can deploy. |
-| `pnpm preview` | Preview the built bundle locally. |
-| `tools\deck-builder\start.ps1` | Start the deck-builder UI (port 8765). |
+- `←` `→` / PageUp / PageDown — between pages
+- `F` — fullscreen present mode
+- `Esc` — exit fullscreen
 
 ---
 
@@ -149,8 +146,38 @@ for the full authoring guide if you're using Copilot or Claude Code.
 
 | Symptom | Fix |
 | --- | --- |
-| `start.ps1` fails activating venv | Run `Set-ExecutionPolicy -Scope Process Bypass` first. |
-| `401 Unauthorized` from AOAI | `az login --tenant <id>` and confirm you have **Cognitive Services OpenAI User** on the resource. |
-| Dropdowns are empty | You haven't uploaded an MSX file yet, or the file is missing a required column (see `tools/deck-builder/README.md`). |
-| Generated deck overflows the 1080px canvas | The prompt has guard-rails but the model occasionally regresses. Open the page, find the absolutely-positioned `Footer`, and add bottom padding ≥ 120px to the page container. |
+| `start.ps1` errors on activate | Run `Set-ExecutionPolicy -Scope Process Bypass` first, then re-run `start.ps1`. |
+| `pnpm` not recognized | Install pnpm globally: `npm install -g pnpm`. |
+| `401 Unauthorized` from Azure OpenAI | Re-run `az login --tenant <id>` and confirm Ronen granted you **Cognitive Services OpenAI User**. |
+| Dropdowns are empty after upload | The MSX file is missing one of the required columns (see step 7). |
+| Generated deck text overflows the slide | Open `slides/<id>/index.tsx`, find the page that overflows, and reduce font sizes or remove a bullet. |
+| Tool says "no LLM backend configured" | `.env` is missing or `AZURE_OPENAI_ENDPOINT` is blank. Re-do step 3. |
 
+---
+
+## What's where
+
+```
+FY-27-Big-Bets/
+├── README.md                        ← you are here
+├── .env.example                     ← copy to .env and fill in
+├── slides/
+│   └── getting-started/             ← example slide
+├── tools/deck-builder/
+│   ├── README.md                    ← deeper tool docs
+│   ├── server.py                    ← Flask server (LLM call + file write)
+│   ├── index.html                   ← UI (parses MSX in-browser)
+│   ├── start.ps1                    ← one-shot launcher
+│   ├── requirements.txt             ← Python deps
+│   ├── reference/example-deck.tsx   ← fictional reference deck for the LLM
+│   └── vendor/xlsx.full.min.js      ← in-browser MSX parser
+└── AGENTS.md / CLAUDE.md            ← for Copilot / Claude Code skills
+```
+
+For the magic-picker scoring formula, alternative LLM backends (Cohere),
+and required MSX columns in detail, see
+[`tools/deck-builder/README.md`](tools/deck-builder/README.md).
+
+---
+
+Made by Ronen Ehrenreich · ABS Israel · FY27.
